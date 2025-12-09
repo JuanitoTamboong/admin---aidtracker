@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AidTracker — Admin Dashboard</title>
+
+<!-- Include Supabase client library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Include Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Include CSS -->
+<link rel="stylesheet" href="admin.css">
+
+<!-- Include JavaScript -->
+<script src="admin.js" defer></script>
+
+</head>
+
+<body>
+<div class="app">
+
+<!-- ---------------- SIDEBAR ---------------- -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">AT</div>
+    <div>
+      <h1>AidTracker</h1>
+      <div class="muted">Dashboard</div>
+    </div>
+  </div>
+
+  <nav class="nav" role="navigation">
+    <button id="btn-dashboard" data-target="dashboard">
+      <i class="fas fa-chart-line"></i> Dashboard
+    </button>
+    <button id="btn-users" data-target="users">
+      <i class="fas fa-users"></i> Users
+    </button>
+    <button id="btn-reports" data-target="reports">
+      <i class="fas fa-file-alt"></i> Reports
+    </button>
+    <button id="btn-responders" class="active" data-target="responders">
+      <i class="fas fa-ambulance"></i> Responders
+    </button>
+  </nav>
+
+  <div style="margin-top:18px">
+    <div class="muted">Quick actions</div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn ghost" id="export">
+        <i class="fas fa-download"></i> Export
+      </button>
+      <button class="btn primary" id="refresh-data">
+        <i class="fas fa-sync-alt"></i> Refresh Data
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- ---------------- MAIN CONTENT ---------------- -->
+<main class="main">
+  <div class="top">
+    <h2>Responders</h2>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="muted" id="data-updated">Loading data...</div>
+      <button class="btn ghost" id="open-login">
+        <i class="fas fa-cog"></i> Settings
+      </button>
+    </div>
+  </div>
+
+  <!-- RESPONDERS PANEL (Always visible like in image) -->
+  <section id="responders" class="panel active">
+    <div class="table-actions">
+      <button class="btn primary" onclick="addNewResponder()">
+        <i class="fas fa-plus"></i> Add New Responder
+      </button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Unit</th>
+          <th>Contact</th>
+          <th>Status</th>
+          <th>Last Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="responders-table">
+        <tr><td colspan="7" style="text-align:center;padding:20px;">Loading responders...</td></tr>
+      </tbody>
+    </table>
+    
+    <div class="pagination">
+      <button class="btn ghost small"><i class="fas fa-chevron-left"></i> Previous</button>
+      <span class="muted">Page 1 of 1</span>
+      <button class="btn ghost small">Next <i class="fas fa-chevron-right"></i></button>
+    </div>
+  </section>
+
+  <!-- Hidden panels -->
+  <section id="dashboard" class="panel">
+    <div class="card-row">
+      <div class="card">
+        <div class="muted">Total Users</div>
+        <div class="count" id="total-users">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Active Reports</div>
+        <div class="count" id="active-reports">0</div>
+      </div>
+      <div class="card">
+        <div class="muted">Available Responders</div>
+        <div class="count" id="available-responders">0</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="users" class="panel">
+    <h2>Users</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Reports</th><th>Joined</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="users-table">
+        <tr><td colspan="6" style="text-align:center;padding:20px;">No users table found</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="reports" class="panel">
+    <h2>Reports</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Reporter</th><th>Type</th><th>Location</th><th>Time</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="reports-table">
+        <tr><td colspan="7" style="text-align:center;padding:20px;">Loading reports...</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+</div>
+
+<!-- ---------------- LOGIN MODAL ---------------- -->
+<div id="login-modal" style="display:none;">
+  <div class="modal-backdrop">
+    <div class="modal">
+      <h3>Admin Login</h3>
+
+      <div class="form-row">
+        <input id="admin-user" placeholder="Username">
+      </div>
+
+      <div class="form-row">
+        <input id="admin-pass" type="password" placeholder="Password">
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn ghost" onclick="closeLogin()">Cancel</button>
+        <button class="btn primary" onclick="adminLogin()">Login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------------- ADD RESPONDER MODAL ---------------- -->
+<div id="add-responder-modal" style="display:none;">
+  <div class="modal-backdrop">
+    <div class="modal" style="max-width: 500px;">
+      <h3>Add New Responder</h3>
+      
+      <div class="form-row">
+        <label>Full Name</label>
+        <input id="responder-name" placeholder="Enter full name">
+      </div>
+      
+      <div class="form-row">
+        <label>Unit/Department</label>
+        <input id="responder-unit" placeholder="e.g., Fire Station 1, Police Dept, EMS">
+      </div>
+      
+      <div class="form-row">
+        <label>Contact Information</label>
+        <input id="responder-contact" placeholder="Phone number or email">
+      </div>
+      
+      <div class="form-row">
+        <label>Email (optional)</label>
+        <input id="responder-email" type="email" placeholder="email@example.com">
+      </div>
+      
+      <div class="form-row">
+        <label>Status</label>
+        <select id="responder-status">
+          <option value="Available">Available</option>
+          <option value="On Duty">On Duty</option>
+          <option value="Busy">Busy</option>
+          <option value="On Call">On Call</option>
+          <option value="Off Duty">Off Duty</option>
+          <option value="Assigned" selected>Assigned</option>
+        </select>
+      </div>
+      
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px;">
+        <button class="btn ghost" onclick="closeAddResponderModal()">Cancel</button>
+        <button class="btn primary" onclick="saveNewResponder()">Save Responder</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
